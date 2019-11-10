@@ -44,8 +44,8 @@ ADMIN_EMAILS="$ADMIN_EMAILS"
 
 # Invisible reCaptcha secret key
 # Create one in https://www.google.com/recaptcha/intro/
-RECAPTCHA_SITE_KEY=
-RECAPTCHA_SECRET_KEY=
+RECAPTCHA_SITE_KEY="$RECAPTCHA_SITE_KEY"
+RECAPTCHA_SECRET_KEY="$RECAPTCHA_SECRET_KEY"
 
 # Google Cloud API to prevent from users from submitting malware URLs.
 # Get it from https://developers.google.com/safe-browsing/v4/get-started
