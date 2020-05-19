@@ -77,4 +77,5 @@ REPORT_MAIL=
 # Support email to show on the app
 CONTACT_EMAIL=
 
+SITE_NAME="Kutt"
 EOF
