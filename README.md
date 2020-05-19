@@ -13,13 +13,11 @@ _Contributions and bug reports are welcome._
 [![GitHub license](https://img.shields.io/github/license/thedevs-network/kutt.svg)](https://github.com/thedevs-network/kutt/blob/develop/LICENSE)
 [![Twitter](https://img.shields.io/twitter/url/https/github.com/thedevs-network/kutt/.svg?style=social)](https://twitter.com/intent/tweet?text=Wow:&url=https%3A%2F%2Fgithub.com%2Fthedevs-network%2Fkutt%2F)
 
-## Kutt v2 (🚧 beta)
+## Migration from v1
 
 The new version of Kutt is here. In version 2, we used TypeScript and we moved from Neo4j to PostgreSQL database in favor of performance and we're working on adding new features.
 
 If you're coming from v1, refer to [MIGRATION.md](MIGRATION.md) to migrate data from Neo4j to PostgreSQL.
-
-You can still find the stable version (v1) in the [v1](https://github.com/thedevs-network/kutt/tree/v1) branch.
 
 ## Table of Contents
 
@@ -49,10 +47,11 @@ You can still find the stable version (v1) in the [v1](https://github.com/thedev
 - Passport (Authentication)
 - React (UI library)
 - Next (Universal/server-side rendered React)
-- Redux (State management)
+- Easy Peasy (State management)
 - styled-components (CSS styling solution library)
 - Recharts (Chart library)
 - PostgreSQL (database)
+- Redis (Cache layer)
 
 ## Setup
 
@@ -77,68 +76,7 @@ Download Kutt's extension for web browsers via below links. You can also find th
 
 ## API
 
-In addition to the website, you can use these APIs to create, delete and get URLs.
-
-### Types
-
-```
-URL {
-  createdAt {string} ISO timestamp of when the URL was created
-  id {string} Unique ID of the URL
-  target {string} Where the URL will redirect to
-  password {boolean} Whether or not a password is required
-  count {number} The amount of visits to this URL
-  shortUrl {string} The shortened link (Usually https://kutt.it/id)
-}
-```
-
-In order to use these APIs you need to generate an API key from settings. Never put this key in the client side of your app or anywhere that is exposed to others.
-
-All API requests and responses are in JSON format.
-
-Include the API key as `X-API-Key` in the header of all below requests. Available API endpoints with body parameters:
-
-**Get shortened URLs list:**
-
-```
-GET /api/url/geturls
-```
-
-Returns:
-
-```
-{
-  list {Array<URL>} List of URL objects
-  countAll {number} Amount of items in the list
-}
-```
-
-**Submit a link to be shortened**:
-
-```
-POST /api/url/submit
-```
-
-Body:
-
-- `target`: Original long URL to be shortened.
-- `customurl` (optional): Set a custom URL.
-- `password` (optional): Set a password.
-- `reuse` (optional): If a URL with the specified target exists returns it, otherwise will send a new shortened URL.
-
-Returns: URL object
-
-**Delete a shortened URL** and **Get stats for a shortened URL:**
-
-```
-POST /api/url/deleteurl
-GET /api/url/stats
-```
-
-Body (or query for GET request)
-
-- `id`: ID of the shortened URL.
-- `domain` (optional): Required if a custom domain is used for short URL.
+Visit API v2 documentation on [docs.kutt.it](https://docs.kutt.it)
 
 ## Integrations
 
@@ -151,15 +89,18 @@ You can use Kutt as your default URL shortener in [ShareX](https://getsharex.com
 Download Kutt's official workflow for [Alfred](https://www.alfredapp.com/) app from [alfred-kutt](https://github.com/thedevs-network/alfred-kutt) repository.
 
 ## 3rd Party packages
-| Language  | Link                                                       | Description                                       |
-|-----------|------------------------------------------------------------|---------------------------------------------------|
-| C# (.NET) | [KuttSharp](https://github.com/0xaryan/KuttSharp)          | .NET package for Kutt.it url shortener            |
-| Python    | [kutt-cli](https://github.com/RealAmirali/kutt-cli)        | Command-line client for Kutt written in Python    |
-| Ruby      | [kutt.rb](https://github.com/RealAmirali/kutt.rb)          | Kutt library written in Ruby                      |
-| Rust      | [kutt-rs](https://github.com/robatipoor/kutt-rs)           | Command line tool written in Rust                 |
-| Node.js   | [node-kutt](https://github.com/ardalanamini/node-kutt)     | Node.js client for Kutt.it url shortener          |
-| Bash      | [kutt-bash](https://git.fossdaily.xyz/caltlgin/kutt-bash)  | Simple command line program for Kutt              |
-| JacaScript| [kutt-vscode](https://github.com/mehrad77/kutt-vscode)     | Visual Studio Code extention for Kutt             |
+| Language   | Link                                                       | Description                                        |
+| ---------- | ---------------------------------------------------------- | -------------------------------------------------- |
+| C# (.NET)  | [KuttSharp](https://github.com/0xaryan/KuttSharp)          | .NET package for Kutt.it url shortener             |
+| Python     | [kutt-cli](https://github.com/RealAmirali/kutt-cli)        | Command-line client for Kutt written in Python     |
+| Ruby       | [kutt.rb](https://github.com/RealAmirali/kutt.rb)          | Kutt library written in Ruby                       |
+| Rust       | [urlshortener](https://github.com/vityafx/urlshortener-rs) | URL shortener library written in Rust              |
+| Rust       | [kutt-rs](https://github.com/robatipoor/kutt-rs)           | Command line tool written in Rust                  |
+| Node.js    | [node-kutt](https://github.com/ardalanamini/node-kutt)     | Node.js client for Kutt.it url shortener           |
+| Bash       | [kutt-bash](https://git.fossdaily.xyz/caltlgin/kutt-bash)  | Simple command line program for Kutt               |
+| JavaScript | [kutt-vscode](https://github.com/mehrad77/kutt-vscode)     | Visual Studio Code extention for Kutt              |
+| Java       | [kutt-desktop](https://github.com/cipher812/kutt-desktop)  | A Cross platform Java desktop application for Kutt |
+| Go         | [kutt-go](https://github.com/raahii/kutt-go)               | Go client for Kutt.it url shortener                |
 
 ## Contributing
 
