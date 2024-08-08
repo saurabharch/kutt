@@ -1,4 +1,4 @@
-import * as Knex from "knex";
+import { Knex } from "knex";
 
 export async function createDomainTable(knex: Knex) {
   const hasTable = await knex.schema.hasTable("domains");
@@ -23,8 +23,11 @@ export async function createDomainTable(knex: Knex) {
         .integer("user_id")
         .references("id")
         .inTable("users")
-        .onDelete("SET NULL")
-        .unique();
+        .onDelete("SET NULL");
+      table
+        .uuid("uuid")
+        .notNullable()
+        .defaultTo(knex.raw("uuid_generate_v4()"));
       table.timestamps(false, true);
     });
   }

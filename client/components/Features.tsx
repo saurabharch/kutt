@@ -1,11 +1,10 @@
 import React from "react";
-import styled from "styled-components";
-import { Flex } from "reflexbox/styled-components";
+import { Flex } from "rebass/styled-components";
 
 import FeaturesItem from "./FeaturesItem";
 import { ColCenterH } from "./Layout";
 import { Colors } from "../consts";
-import Text, { H3 } from "./Text";
+import { H3 } from "./Text";
 
 const Features = () => (
   <ColCenterH
@@ -32,7 +31,7 @@ const Features = () => (
         Use custom domains for your links. Add or remove them for free.
       </FeaturesItem>
       <FeaturesItem title="API" icon="zap">
-        Use the provided API to create, delete and get URLs from anywhere.
+        Use the provided API to create, delete, and get URLs from anywhere.
       </FeaturesItem>
       <FeaturesItem title="Free &amp; open source" icon="heart">
         Completely open source and free. You can host it on your own server.

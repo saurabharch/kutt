@@ -1,5 +1,5 @@
 import { useFormState } from "react-use-form-state";
-import { Flex } from "reflexbox/styled-components";
+import { Flex } from "rebass/styled-components";
 import React, { FC, useState } from "react";
 import axios from "axios";
 
@@ -20,7 +20,7 @@ const SettingsPassword: FC = () => {
     { withIds: true }
   );
 
-  const onSubmit = async e => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
     if (!formState.validity.password) {
@@ -55,13 +55,13 @@ const SettingsPassword: FC = () => {
         fontSize={[15, 16]}
         bold
       >
-        New password
+        New password:
       </Text>
       <Flex as="form" onSubmit={onSubmit}>
         <TextInput
           {...password({
             name: "password",
-            validate: value => {
+            validate: (value) => {
               const val = value.trim();
               if (!val || val.length < 8) {
                 return "Password must be at least 8 chars.";

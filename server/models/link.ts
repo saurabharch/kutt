@@ -1,4 +1,4 @@
-import * as Knex from "knex";
+import { Knex } from "knex";
 
 export async function createLinkTable(knex: Knex) {
   const hasTable = await knex.schema.hasTable("links");
@@ -9,6 +9,7 @@ export async function createLinkTable(knex: Knex) {
       knex.raw('create extension if not exists "uuid-ossp"');
       table.increments("id").primary();
       table.string("address").notNullable();
+      table.string("description");
       table
         .boolean("banned")
         .notNullable()
@@ -22,6 +23,7 @@ export async function createLinkTable(knex: Knex) {
         .references("id")
         .inTable("domains");
       table.string("password");
+      table.dateTime("expire_in");
       table.string("target", 2040).notNullable();
       table
         .integer("user_id")

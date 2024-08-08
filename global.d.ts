@@ -1,17 +1,20 @@
-type Raw = import("knex").Raw;
+type Raw = import("knex").Knex.Raw;
 
 type Match<T> = {
   [K in keyof T]?: T[K] | [">" | ">=" | "<=" | "<", T[K]];
 };
 
 interface User {
-  id: number;
   apikey?: string;
-  banned: boolean;
   banned_by_id?: number;
+  banned: boolean;
+  change_email_address?: string;
+  change_email_expires?: string;
+  change_email_token?: string;
   cooldowns?: string[];
   created_at: string;
   email: string;
+  id: number;
   password: string;
   reset_password_expires?: string;
   reset_password_token?: string;
@@ -69,12 +72,14 @@ interface IP {
 }
 
 interface Link {
-  id: number;
   address: string;
-  banned: boolean;
   banned_by_id?: number;
+  banned: boolean;
   created_at: string;
+  description?: string;
   domain_id?: number;
+  expire_in: string;
+  id: number;
   password?: string;
   target: string;
   updated_at: string;
@@ -146,5 +151,10 @@ declare namespace Express {
     protectedLink?: string;
     token?: string;
     user: UserJoined;
+    context?: {
+      limit: number;
+      skip: number;
+      all: boolean;
+    };
   }
 }

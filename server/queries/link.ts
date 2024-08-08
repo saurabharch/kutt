@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 
 import { CustomError } from "../utils";
-import * as redis from "../redis";
+import redisClient, * as redis from "../redis";
 import knex from "../knex";
 
 const selectable = [
@@ -12,6 +12,8 @@ const selectable = [
   "links.domain_id",
   "links.updated_at",
   "links.password",
+  "links.description",
+  "links.expire_in",
   "links.target",
   "links.visit_count",
   "links.user_id",
@@ -52,9 +54,10 @@ export const total = async (match: Match<Link>, params: TotalParams = {}) => {
   });
 
   if (params.search) {
-    query.andWhereRaw("links.address || ' ' || target ILIKE '%' || ? || '%'", [
-      params.search
-    ]);
+    query.andWhereRaw(
+      "links.description || ' '  || links.address || ' ' || target ILIKE '%' || ? || '%'",
+      [params.search]
+    );
   }
 
   const [{ count }] = await query.count("id");
@@ -77,9 +80,10 @@ export const get = async (match: Partial<Link>, params: GetParams) => {
     .orderBy("created_at", "desc");
 
   if (params.search) {
-    query.andWhereRaw("links.address || ' ' || target ILIKE '%' || ? || '%'", [
-      params.search
-    ]);
+    query.andWhereRaw(
+      "concat_ws(' ', description, links.address, target, domains.address) ILIKE '%' || ? || '%'",
+      [params.search]
+    );
   }
 
   query.leftJoin("domains", "links.domain_id", "domains.id");
@@ -92,7 +96,7 @@ export const get = async (match: Partial<Link>, params: GetParams) => {
 export const find = async (match: Partial<Link>): Promise<Link> => {
   if (match.address && match.domain_id) {
     const key = redis.key.link(match.address, match.domain_id);
-    const cachedLink = await redis.get(key);
+    const cachedLink = await redisClient.get(key);
     if (cachedLink) return JSON.parse(cachedLink);
   }
 
@@ -104,7 +108,7 @@ export const find = async (match: Partial<Link>): Promise<Link> => {
 
   if (link) {
     const key = redis.key.link(link.address, link.domain_id);
-    redis.set(key, JSON.stringify(link), "EX", 60 * 60 * 2);
+    redisClient.set(key, JSON.stringify(link), "EX", 60 * 60 * 2);
   }
 
   return link;
@@ -131,6 +135,8 @@ export const create = async (params: Create) => {
       domain_id: params.domain_id || null,
       user_id: params.user_id || null,
       address: params.address,
+      description: params.description || null,
+      expire_in: params.expire_in || null,
       target: params.target
     },
     "*"
@@ -157,7 +163,28 @@ export const remove = async (match: Partial<Link>) => {
   return !!deletedLink;
 };
 
+export const batchRemove = async (match: Match<Link>) => {
+  const deleteQuery = knex<Link>("links");
+  const findQuery = knex<Link>("links");
+
+  Object.entries(match).forEach(([key, value]) => {
+    findQuery.andWhere(key, ...(Array.isArray(value) ? value : [value]));
+    deleteQuery.andWhere(key, ...(Array.isArray(value) ? value : [value]));
+  });
+
+  const links = await findQuery;
+
+  links.forEach(redis.remove.link);
+
+  await deleteQuery.delete();
+};
+
 export const update = async (match: Partial<Link>, update: Partial<Link>) => {
+  if (update.password) {
+    const salt = await bcrypt.genSalt(12);
+    update.password = await bcrypt.hash(update.password, salt);
+  }
+
   const links = await knex<Link>("links")
     .where(match)
     .update({ ...update, updated_at: new Date().toISOString() }, "*");
@@ -167,7 +194,7 @@ export const update = async (match: Partial<Link>, update: Partial<Link>) => {
   return links;
 };
 
-export const increamentVisit = async (match: Partial<Link>) => {
+export const incrementVisit = async (match: Partial<Link>) => {
   return knex<Link>("links")
     .where(match)
     .increment("visit_count", 1);

@@ -1,7 +1,6 @@
-import { Flex } from "reflexbox/styled-components";
+import { Flex } from "rebass/styled-components";
 import React, { useEffect } from "react";
 import styled from "styled-components";
-import Router from "next/router";
 
 import { useStoreState, useStoreActions } from "../store";
 import PageLoading from "./PageLoading";
@@ -22,17 +21,21 @@ const Wrapper = styled(Flex)`
 `;
 
 const AppWrapper = ({ children }: { children: any }) => {
-  const isAuthenticated = useStoreState(s => s.auth.isAuthenticated);
-  const logout = useStoreActions(s => s.auth.logout);
-  const fetched = useStoreState(s => s.settings.fetched);
-  const loading = useStoreState(s => s.loading.loading);
-  const getSettings = useStoreActions(s => s.settings.getSettings);
+  const isAuthenticated = useStoreState((s) => s.auth.isAuthenticated);
+  const logout = useStoreActions((s) => s.auth.logout);
+  const fetched = useStoreState((s) => s.settings.fetched);
+  const loading = useStoreState((s) => s.loading.loading);
+  const getSettings = useStoreActions((s) => s.settings.getSettings);
+
+  const isVerifyEmailPage =
+    typeof window !== "undefined" &&
+    window.location.pathname.includes("verify-email");
 
   useEffect(() => {
-    if (isAuthenticated && !fetched) {
+    if (isAuthenticated && !fetched && !isVerifyEmailPage) {
       getSettings().catch(() => logout());
     }
-  }, []);
+  }, [isAuthenticated, fetched, isVerifyEmailPage, getSettings, logout]);
 
   return (
     <Wrapper

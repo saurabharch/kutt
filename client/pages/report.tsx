@@ -1,5 +1,5 @@
 import { useFormState } from "react-use-form-state";
-import { Flex } from "reflexbox/styled-components";
+import { Flex } from "rebass/styled-components";
 import React, { useState } from "react";
 import axios from "axios";
 
@@ -12,12 +12,16 @@ import Icon from "../components/Icon";
 import { useMessage } from "../hooks";
 import { APIv2 } from "../consts";
 
+import getConfig from "next/config";
+
+const { publicRuntimeConfig } = getConfig();
+
 const ReportPage = () => {
   const [formState, { text }] = useFormState<{ url: string }>();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useMessage(5000);
 
-  const onSubmit = async e => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage();
@@ -43,7 +47,7 @@ const ReportPage = () => {
           or use the form. We will take actions shortly.
         </Text>
         <Text mb={4}>
-          {(process.env.REPORT_EMAIL || "").replace("@", "[at]")}
+          {(publicRuntimeConfig.REPORT_EMAIL || "").replace("@", "[at]")}
         </Text>
         <Text mb={3}>
           <Span bold>URL containing malware/scam:</Span>
@@ -57,7 +61,7 @@ const ReportPage = () => {
         >
           <TextInput
             {...text("url")}
-            placeholder={`${process.env.DEFAULT_DOMAIN}/example`}
+            placeholder={`${publicRuntimeConfig.DEFAULT_DOMAIN}/example`}
             height={[44, 54]}
             width={[1, 1 / 2]}
             flex="0 0 auto"

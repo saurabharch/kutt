@@ -1,4 +1,3 @@
-import ua from "universal-analytics";
 import { Handler } from "express";
 import { promisify } from "util";
 import bcrypt from "bcryptjs";
@@ -19,7 +18,8 @@ import env from "../env";
 const dnsLookup = promisify(dns.lookup);
 
 export const get: Handler = async (req, res) => {
-  const { limit, skip, search, all } = req.query;
+  const { limit, skip, all } = req.context;
+  const search = req.query.search as string;
   const userId = req.user.id;
 
   const match = {
@@ -42,10 +42,18 @@ export const get: Handler = async (req, res) => {
 };
 
 export const create: Handler = async (req: CreateLinkReq, res) => {
-  const { reuse, password, customurl, target, domain } = req.body;
+  const {
+    reuse,
+    password,
+    customurl,
+    description,
+    target,
+    domain,
+    expire_in
+  } = req.body;
   const domain_id = domain ? domain.id : null;
 
-  const targetDomain = URL.parse(target).hostname;
+  const targetDomain = utils.removeWww(URL.parse(target).hostname);
 
   const queries = await Promise.all([
     validators.cooldown(req.user),
@@ -60,7 +68,6 @@ export const create: Handler = async (req: CreateLinkReq, res) => {
     customurl &&
       query.link.find({
         address: customurl,
-        user_id: req.user.id,
         domain_id
       }),
     !customurl && utils.generateId(domain_id),
@@ -85,7 +92,9 @@ export const create: Handler = async (req: CreateLinkReq, res) => {
     password,
     address,
     domain_id,
+    description,
     target,
+    expire_in,
     user_id: req.user && req.user.id
   });
 
@@ -99,8 +108,7 @@ export const create: Handler = async (req: CreateLinkReq, res) => {
 };
 
 export const edit: Handler = async (req, res) => {
-  const { address, target } = req.body;
-
+  const { address, target, description, expire_in, password } = req.body;
   if (!address && !target) {
     throw new CustomError("Should at least update one field.");
   }
@@ -114,8 +122,8 @@ export const edit: Handler = async (req, res) => {
     throw new CustomError("Link was not found.");
   }
 
-  const targetDomain = URL.parse(target).hostname;
-  const domain_id = link.domain_id;
+  const targetDomain = utils.removeWww(URL.parse(target).hostname);
+  const domain_id = link.domain_id || null;
 
   const queries = await Promise.all([
     validators.cooldown(req.user),
@@ -123,7 +131,6 @@ export const edit: Handler = async (req, res) => {
     address !== link.address &&
       query.link.find({
         address,
-        user_id: req.user.id,
         domain_id
       }),
     validators.bannedDomain(targetDomain),
@@ -142,7 +149,10 @@ export const edit: Handler = async (req, res) => {
     },
     {
       ...(address && { address }),
-      ...(target && { target })
+      ...(description && { description }),
+      ...(target && { target }),
+      ...(expire_in && { expire_in }),
+      ...(password && { password })
     }
   );
 
@@ -207,7 +217,7 @@ export const ban: Handler = async (req, res) => {
   // 2. Ban link
   tasks.push(query.link.update({ uuid: id }, update));
 
-  const domain = URL.parse(link.target).hostname;
+  const domain = utils.removeWww(URL.parse(link.target).hostname);
 
   // 3. Ban target's domain
   if (req.body.domain) {
@@ -255,7 +265,7 @@ export const redirect = (app: ReturnType<typeof next>): Handler => async (
   if (isPreservedUrl) return next();
 
   // 1. If custom domain, get domain info
-  const { host } = req.headers;
+  const host = utils.removeWww(req.headers.host);
   const domain =
     host !== env.DEFAULT_DOMAIN
       ? await query.domain.find({ address: host })
@@ -265,13 +275,13 @@ export const redirect = (app: ReturnType<typeof next>): Handler => async (
   const address = req.params.id.replace("+", "");
   const link = await query.link.find({
     address,
-    domain_id: domain && domain.id
+    domain_id: domain ? domain.id : null
   });
 
   // 3. When no link, if has domain redirect to domain's homepage
-  // otherwise rediredt to 404
+  // otherwise redirect to 404
   if (!link) {
-    return res.redirect(301, domain ? domain.homepage : "/404");
+    return res.redirect(302, domain ? domain.homepage : "/404");
   }
 
   // 4. If link is banned, redirect to banned page.
@@ -300,19 +310,7 @@ export const redirect = (app: ReturnType<typeof next>): Handler => async (
     });
   }
 
-  // 8. Create Google Analytics visit
-  if (env.GOOGLE_ANALYTICS_UNIVERSAL && !isBot) {
-    ua(env.GOOGLE_ANALYTICS_UNIVERSAL)
-      .pageview({
-        dp: `/${address}`,
-        ua: req.headers["user-agent"],
-        uip: req.realIP,
-        aip: 1
-      })
-      .send();
-  }
-
-  // 10. Redirect to target
+  // 8. Redirect to target
   return res.redirect(link.target);
 };
 
@@ -343,27 +341,13 @@ export const redirectProtected: Handler = async (req, res) => {
     });
   }
 
-  // 5. Create Google Analytics visit
-  if (env.GOOGLE_ANALYTICS_UNIVERSAL) {
-    ua(env.GOOGLE_ANALYTICS_UNIVERSAL)
-      .pageview({
-        dp: `/${link.address}`,
-        ua: req.headers["user-agent"],
-        uip: req.realIP,
-        aip: 1
-      })
-      .send();
-  }
-
-  // 6. Send target
+  // 5. Send target
   return res.status(200).send({ target: link.target });
 };
 
 export const redirectCustomDomain: Handler = async (req, res, next) => {
-  const {
-    headers: { host },
-    path
-  } = req;
+  const { path } = req;
+  const host = utils.removeWww(req.headers.host);
 
   if (host === env.DEFAULT_DOMAIN) {
     return next();
@@ -380,7 +364,7 @@ export const redirectCustomDomain: Handler = async (req, res, next) => {
       ? domain.homepage
       : `https://${env.DEFAULT_DOMAIN + path}`;
 
-    return res.redirect(301, redirectURL);
+    return res.redirect(302, redirectURL);
   }
 
   return next();

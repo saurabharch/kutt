@@ -3,7 +3,7 @@ import axios from "axios";
 import query from "query-string";
 
 import { getAxiosConfig } from "../utils";
-import { API, APIv2 } from "../consts";
+import { APIv2 } from "../consts";
 
 export interface Link {
   id: string;
@@ -15,6 +15,8 @@ export interface Link {
   domain?: string;
   domain_id?: number;
   password?: string;
+  description?: string;
+  expire_in?: string;
   target: string;
   updated_at: string;
   user_id?: number;
@@ -42,6 +44,8 @@ export interface EditLink {
   id: string;
   target: string;
   address: string;
+  description?: string;
+  expire_in?: string;
 }
 
 export interface LinksQuery {
@@ -118,7 +122,9 @@ export const links: Links = {
     actions.update(res.data);
   }),
   add: action((state, payload) => {
-    state.items.pop();
+    if (state.items.length >= 10) {
+      state.items.pop();
+    }
     state.items.unshift(payload);
   }),
   set: action((state, payload) => {

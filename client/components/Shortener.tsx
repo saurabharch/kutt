@@ -1,8 +1,9 @@
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { useFormState } from "react-use-form-state";
-import { Flex } from "reflexbox/styled-components";
-import React, { FC, useState } from "react";
+import { Flex } from "rebass/styled-components";
+import React, { useState } from "react";
 import styled from "styled-components";
+import getConfig from "next/config";
 
 import { useStoreActions, useStoreState } from "../store";
 import { Checkbox, Select, TextInput } from "./Input";
@@ -14,6 +15,8 @@ import { Link } from "../store/links";
 import Animation from "./Animation";
 import { Colors } from "../consts";
 import Icon from "./Icon";
+
+const { publicRuntimeConfig } = getConfig();
 
 const SubmitIconWrapper = styled.div`
   content: "";
@@ -51,33 +54,34 @@ interface Form {
   domain?: string;
   customurl?: string;
   password?: string;
+  description?: string;
+  expire_in?: string;
   showAdvanced?: boolean;
 }
 
-const defaultDomain = process.env.DEFAULT_DOMAIN;
+const defaultDomain = publicRuntimeConfig.DEFAULT_DOMAIN;
 
 const Shortener = () => {
-  const { isAuthenticated } = useStoreState(s => s.auth);
-  const domains = useStoreState(s => s.settings.domains);
-  const submit = useStoreActions(s => s.links.submit);
+  const { isAuthenticated } = useStoreState((s) => s.auth);
+  const domains = useStoreState((s) => s.settings.domains);
+  const submit = useStoreActions((s) => s.links.submit);
   const [link, setLink] = useState<Link | null>(null);
   const [message, setMessage] = useMessage(3000);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useCopy();
-  const [formState, { raw, password, text, select, label }] = useFormState<
-    Form
-  >(
-    { showAdvanced: false },
-    {
-      withIds: true,
-      onChange(e, stateValues, nextStateValues) {
-        if (stateValues.showAdvanced && !nextStateValues.showAdvanced) {
-          formState.clear();
-          formState.setField("target", stateValues.target);
+  const [formState, { raw, password, text, select, label }] =
+    useFormState<Form>(
+      { showAdvanced: false },
+      {
+        withIds: true,
+        onChange(e, stateValues, nextStateValues) {
+          if (stateValues.showAdvanced && !nextStateValues.showAdvanced) {
+            formState.clear();
+            formState.setField("target", stateValues.target);
+          }
         }
       }
-    }
-  );
+    );
 
   const submitLink = async (reCaptchaToken?: string) => {
     try {
@@ -92,13 +96,17 @@ const Shortener = () => {
     setLoading(false);
   };
 
-  const onSubmit = async e => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
     setCopied(false);
     setLoading(true);
 
-    if (process.env.NODE_ENV === "production" && !isAuthenticated) {
+    if (
+      process.env.NODE_ENV === "production" &&
+      !!publicRuntimeConfig.RECAPTCHA_SITE_KEY &&
+      !isAuthenticated
+    ) {
       window.grecaptcha.execute(window.captchaId);
       const getCaptchaToken = () => {
         setTimeout(() => {
@@ -195,6 +203,7 @@ const Shortener = () => {
           placeholder="Paste your long URL"
           placeholderSize={[16, 17, 18]}
           fontSize={[18, 20, 22]}
+          aria-label="target"
           width={1}
           height={[58, 64, 72]}
           px={0}
@@ -203,7 +212,7 @@ const Shortener = () => {
           autoFocus
           data-lpignore
         />
-        <SubmitIconWrapper onClick={onSubmit}>
+        <SubmitIconWrapper onClick={onSubmit} role="button" aria-label="submit">
           <Icon
             name={loading ? "spinner" : "send"}
             size={[22, 26, 28]}
@@ -222,7 +231,7 @@ const Shortener = () => {
       <Checkbox
         {...raw({
           name: "showAdvanced",
-          onChange: e => {
+          onChange: () => {
             if (!isAuthenticated) {
               setMessage(
                 "You need to log in or sign up to use advanced options."
@@ -238,81 +247,131 @@ const Shortener = () => {
         alignSelf="flex-start"
       />
       {formState.values.showAdvanced && (
-        <Flex mt={4} flexDirection={["column", "row"]}>
-          <Col mb={[3, 0]}>
-            <Text
-              as="label"
-              {...label("domain")}
-              fontSize={[14, 15]}
-              mb={2}
-              bold
-            >
-              Domain
-            </Text>
-            <Select
-              {...select("domain")}
-              data-lpignore
-              pl={[3, 24]}
-              pr={[3, 24]}
-              fontSize={[14, 15]}
-              height={[40, 44]}
-              width={[170, 200]}
-              options={[
-                { key: defaultDomain, value: "" },
-                ...domains.map(d => ({
-                  key: d.address,
-                  value: d.address
-                }))
-              ]}
-            />
-          </Col>
-          <Col mb={[3, 0]} ml={[0, 24]}>
-            <Text
-              as="label"
-              {...label("customurl")}
-              fontSize={[14, 15]}
-              mb={2}
-              bold
-            >
-              {formState.values.domain || defaultDomain}/
-            </Text>
-            <TextInput
-              {...text("customurl")}
-              placeholder="Custom address..."
-              autocomplete="off"
-              data-lpignore
-              pl={[3, 24]}
-              pr={[3, 24]}
-              placeholderSize={[13, 14]}
-              fontSize={[14, 15]}
-              height={[40, 44]}
-              width={[210, 240]}
-            />
-          </Col>
-          <Col ml={[0, 24]}>
-            <Text
-              as="label"
-              {...label("password")}
-              fontSize={[14, 15]}
-              mb={2}
-              bold
-            >
-              Password:
-            </Text>
-            <TextInput
-              {...password("password")}
-              placeholder="Password..."
-              autocomplete="off"
-              data-lpignore
-              pl={[3, 24]}
-              pr={[3, 24]}
-              placeholderSize={[13, 14]}
-              fontSize={[14, 15]}
-              height={[40, 44]}
-              width={[210, 240]}
-            />
-          </Col>
-        </Flex>
+        <div>
+          <Flex mt={4} flexDirection={["column", "row"]}>
+            <Col mb={[3, 0]}>
+              <Text
+                as="label"
+                {...label("domain")}
+                fontSize={[14, 15]}
+                mb={2}
+                bold
+              >
+                Domain:
+              </Text>
+              <Select
+                {...select("domain")}
+                data-lpignore
+                pl={[3, 24]}
+                pr={[3, 24]}
+                fontSize={[14, 15]}
+                height={[40, 44]}
+                width={[1, 210, 240]}
+                options={[
+                  { key: defaultDomain, value: "" },
+                  ...domains.map((d) => ({
+                    key: d.address,
+                    value: d.address
+                  }))
+                ]}
+              />
+            </Col>
+            <Col mb={[3, 0]} ml={[0, 24]}>
+              <Text
+                as="label"
+                {...label("customurl")}
+                fontSize={[14, 15]}
+                mb={2}
+                bold
+              >
+                {formState.values.domain || defaultDomain}/
+              </Text>
+              <TextInput
+                {...text("customurl")}
+                placeholder="Custom address..."
+                autocomplete="off"
+                data-lpignore
+                pl={[3, 24]}
+                pr={[3, 24]}
+                placeholderSize={[13, 14]}
+                fontSize={[14, 15]}
+                height={[40, 44]}
+                width={[1, 210, 240]}
+              />
+            </Col>
+            <Col ml={[0, 24]}>
+              <Text
+                as="label"
+                {...label("password")}
+                fontSize={[14, 15]}
+                mb={2}
+                bold
+              >
+                Password:
+              </Text>
+              <TextInput
+                {...password("password")}
+                placeholder="Password..."
+                autocomplete="off"
+                data-lpignore
+                pl={[3, 24]}
+                pr={[3, 24]}
+                placeholderSize={[13, 14]}
+                fontSize={[14, 15]}
+                height={[40, 44]}
+                width={[1, 210, 240]}
+              />
+            </Col>
+          </Flex>
+          <Flex mt={[3]} flexDirection={["column", "row"]}>
+            <Col mb={[3, 0]}>
+              <Text
+                as="label"
+                {...label("expire_in")}
+                fontSize={[14, 15]}
+                mb={2}
+                bold
+              >
+                Expire in:
+              </Text>
+              <TextInput
+                {...text("expire_in")}
+                placeholder="2 minutes/hours/days"
+                data-lpignore
+                pl={[3, 24]}
+                pr={[3, 24]}
+                placeholderSize={[13, 14]}
+                fontSize={[14, 15]}
+                height={[40, 44]}
+                width={[1, 210, 240]}
+                maxWidth="100%"
+              />
+            </Col>
+            <Col width={[1, 2 / 3]} ml={[0, 26]}>
+              <Text
+                as="label"
+                {...label("description")}
+                fontSize={[14, 15]}
+                mb={2}
+                bold
+              >
+                Description:
+              </Text>
+              <TextInput
+                {...text("description")}
+                placeholder="Description"
+                data-lpignore
+                pl={[3, 24]}
+                pr={[3, 24]}
+                placeholderSize={[13, 14]}
+                fontSize={[14, 15]}
+                height={[40, 44]}
+                width={1}
+                maxWidth="100%"
+              />
+            </Col>
+          </Flex>
+        </div>
       )}
     </Col>
   );

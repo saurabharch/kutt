@@ -4,7 +4,7 @@ export default {
   openapi: "3.0.0",
   info: {
     title: "Kutt.it",
-    description: "API referrence for [http://kutt.it](http://kutt.it).\n",
+    description: "API reference for [http://kutt.it](http://kutt.it).\n",
     version: p.version
   },
   servers: [
@@ -117,7 +117,7 @@ export default {
         },
         responses: {
           "200": {
-            description: "Craeted link",
+            description: "Created link",
             content: {
               "application/json": {
                 schema: {
@@ -371,6 +371,9 @@ export default {
           target: {
             type: "string"
           },
+          description: {
+            type: "string"
+          },
           updated_at: {
             type: "string",
             format: "date-time"
@@ -518,6 +521,13 @@ export default {
           target: {
             type: "string"
           },
+          description: {
+            type: "string"
+          },
+          expire_in: {
+            type: "string",
+            example: "2 minutes/hours/days"
+          },
           password: {
             type: "string"
           },
@@ -541,12 +551,20 @@ export default {
         }
       },
       body_1: {
+        required: ["target", "address"],
         properties: {
           target: {
             type: "string"
           },
           address: {
             type: "string"
+          },
+          description: {
+            type: "string"
+          },
+          expire_in: {
+            type: "string",
+            example: "2 minutes/hours/days"
           }
         }
       },
